@@ -530,6 +530,14 @@ if (player.version < 5) {
       document.getElementById("notation").textContent = ("Notation: Brackets")
   }
 
+  if (player.version < 12.4) {
+    player.version = 12.4
+    for (let i=1; i<9; i++) {
+      player["timeDimension"+i].cost = getTimeDimensionCost(i);
+    }
+    player.epmultCost = getEPMultCost();
+  }
+
   toggleCrunchMode()
   toggleCrunchMode()
   toggleCrunchMode()
@@ -550,7 +558,7 @@ if (player.version < 5) {
   else document.getElementById("chartOnOff").checked = false
   if (player.options.chart.dips) document.getElementById("chartDipsOnOff").checked = true
   else document.getElementById("chartDipsOnOff").checked = false
- 
+
   if (player.options.theme == "Dark" || player.options.theme == "Dark Metro") {
     Chart.defaults.global.defaultFontColor = '#888';
     normalDimChart.data.datasets[0].borderColor = '#888'

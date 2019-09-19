@@ -40,13 +40,7 @@ function getTimeDimensionPower(tier) {
     ret = new Decimal(0)
   }
 
-  if (player.dilation.active) {
-    ret = Decimal.pow(10, Math.pow(ret.log10(), 0.75))
-    if (player.dilation.upgrades.includes(9)) {
-      ret = Decimal.pow(10, Math.pow(ret.log10(), 1.05))
-    }
-  }
-
+  ret = maybeDilate(ret);
 
   return ret
 
@@ -112,25 +106,35 @@ function updateTimeDimensions() {
 
 var timeDimCostMults = [null, 3, 9, 27, 81, 243, 729, 2187, 6561]
 var timeDimStartCosts = [null, 1, 5, 100, 1000, "1e2350", "1e2650", "1e3000", "1e3350"]
+
+function getTimeDimensionCost(tier) {
+  let dim = player["timeDimension"+tier];
+  let cost = Decimal.pow(timeDimCostMults[tier], dim.bought).times(timeDimStartCosts[tier])
+  if (cost.gte(Number.MAX_VALUE)) {
+      cost = Decimal.pow(timeDimCostMults[tier]*1.5, dim.bought).times(timeDimStartCosts[tier])
+  }
+  if (cost.gte("1e1300")) {
+      cost = Decimal.pow(timeDimCostMults[tier]*2.2, dim.bought).times(timeDimStartCosts[tier])
+  }
+  if (tier > 4) {
+      cost = Decimal.pow(timeDimCostMults[tier]*100, dim.bought).times(timeDimStartCosts[tier])
+  }
+  if (cost.gte("1e4000")) {
+      cost = Decimal.pow(10, 500 * (7 + Math.pow(cost.log10() / 1000 - 3, 2)))
+  }
+  return cost;
+}
+
 function buyTimeDimension(tier) {
 
-  var dim = player["timeDimension"+tier]
+  let dim = player["timeDimension"+tier];
   if (tier > 4 && !player.dilation.studies.includes(tier-3)) return false
   if (player.eternityPoints.lt(dim.cost)) return false
 
   player.eternityPoints = player.eternityPoints.minus(dim.cost)
   dim.amount = dim.amount.plus(1);
   dim.bought += 1
-  dim.cost = Decimal.pow(timeDimCostMults[tier], dim.bought).times(timeDimStartCosts[tier])
-  if (dim.cost.gte(Number.MAX_VALUE)) {
-      dim.cost = Decimal.pow(timeDimCostMults[tier]*1.5, dim.bought).times(timeDimStartCosts[tier])
-  }
-  if (dim.cost.gte("1e1300")) {
-      dim.cost = Decimal.pow(timeDimCostMults[tier]*2.2, dim.bought).times(timeDimStartCosts[tier])
-  }
-  if (tier > 4) {
-    dim.cost = Decimal.pow(timeDimCostMults[tier]*100, dim.bought).times(timeDimStartCosts[tier])
-  }
+  dim.cost = getTimeDimensionCost(tier);
   dim.power = dim.power.times(2)
   updateEternityUpgrades()
   return true
